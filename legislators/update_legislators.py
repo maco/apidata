@@ -288,3 +288,16 @@ def check_senate_xml():
             print 'Sen %s: changed website from %s to %s' % (leg['lastname'], leg['website'], website)
             table.legislators[bioguide]['website'] = website
     table.save_to('legislators.csv')
+
+def check_missing_data():
+    table = LegislatorTable('legislators.csv')
+    ignored_fields = ['nickname', 'name_suffix', 'email', 'youtube_url', 'twitter_id', 'official_rss', 'eventful_id', 'sunlight_old_id', 'middlename', 'senate_class']
+    missing = defaultdict(list)
+    for leg in table.legislators.itervalues():
+        for k,v in leg.iteritems():
+            if k not in ignored_fields and not v:
+                missing[k].append(leg['bioguide_id'])
+    for field,pols in missing.iteritems():
+        print field, ':', ','.join(pols)
+        print
+
