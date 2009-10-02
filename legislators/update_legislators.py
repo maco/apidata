@@ -16,17 +16,6 @@ STATES = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
           'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY']
 NONSTATES = ['DC', 'PR', 'GU', 'VI', 'AS', 'MP']
 
-def get_votesmart_legislators():
-    for state in STATES:
-        try:
-            for leg in votesmart.officials.getByOfficeState(6, state):
-                yield leg
-        except VotesmartApiError:
-            pass
-
-        for leg in votesmart.officials.getByOfficeState(5, state):
-            yield leg
-
 class LegislatorTable(object):
 
     def __init__(self, filename):
@@ -52,7 +41,7 @@ class LegislatorTable(object):
                 cond = (cond and leg[attname] == value)
             if cond:
                 return leg
-    
+
     def get_legislators(self, **kwargs):
         for leg in self.legislators.itervalues():
             cond = True
@@ -60,15 +49,6 @@ class LegislatorTable(object):
                 cond = (cond and leg[attname] == value)
             if cond:
                 yield leg
-
-    def check_new_legislators(self, add=False):
-        for leg in get_votesmart_legislators():
-            if not self.get_legislator(votesmart_id=leg.candidateId):
-                print '%s %s (%s)' % (leg.firstName, leg.lastName, leg.candidateId)
-                if add:
-                    bioguide = raw_input('Bioguide ID: ')
-                    if bioguide:
-                        self.add_legislator(leg, bioguide_id=bioguide)
 
     def add_legislator(self, official, bioguide_id):
         person = {}
@@ -175,8 +155,8 @@ def compare_to(oldfile, newfile, approved_edits=None):
 
     old.save_to(oldfile)
 
-def check_bioguide():
-    table = LegislatorTable('legislators.csv')
+def check_bioguide(csvfile):
+    table = LegislatorTable(csvfile)
 
     # get maximum ids 
     max_ids = {}
@@ -307,3 +287,24 @@ def check_missing_data():
         print field, ':', ','.join(polnames)
         print
 
+def get_votesmart_legislators():
+    for state in STATES:
+        try:
+            for leg in votesmart.officials.getByOfficeState(6, state):
+                yield leg
+        except VotesmartApiError:
+            pass
+
+        for leg in votesmart.officials.getByOfficeState(5, state):
+            yield leg
+
+def check_votesmart(add=False):
+    table = LegislatorTable('legislators.csv')
+    for leg in get_votesmart_legislators():
+        if not table.get_legislator(votesmart_id=leg.candidateId):
+            print '%s %s (%s)' % (leg.firstName, leg.lastName, leg.candidateId)
+            if add:
+                bioguide = raw_input('Bioguide ID: ')
+                if bioguide:
+                    table.add_legislator(leg, bioguide_id=bioguide)
+    table.save_to('legislators.csv')
