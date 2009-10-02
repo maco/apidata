@@ -50,7 +50,7 @@ class LegislatorTable(object):
             if cond:
                 yield leg
 
-    def add_legislator(self, official, bioguide_id):
+    def add_legislator_from_pvs(self, official, bioguide_id):
         person = {}
         # get basic information
         id = person['votesmart_id'] = official.candidateId
@@ -61,7 +61,12 @@ class LegislatorTable(object):
         person['nickname'] = official.nickName
         person['title'] = official.title[0:3]
         state = person['state'] = official.officeStateId
-        district = person['district'] = official.officeDistrictName
+        district = official.officeDistrictName
+        if district == 'Jr':
+            district = 'Junior Seat'
+        elif district == 'Sr':
+            district = 'Senior Seat'
+        person['district'] = district
         person['party'] = official.officeParties[0]
 
         # get information from address
@@ -95,11 +100,13 @@ class LegislatorTable(object):
             person['gender'] = bio.gender[0]
         person['fec_id'] = bio.fecId
 
+        # in_office
+        person['in_office'] = '1'
         #curleg = self.get_legislator(state=state, district=district,
         #                             in_office='1')
         #if curleg:
         #    print 'Setting in_office=False on:', curleg
-        #    curleg['in_office'] = False
+        #    curleg['in_office'] = '0'
 
         person['bioguide_id'] = bioguide_id
         # person['crp_id'] =
@@ -228,7 +235,7 @@ def _get_xml_value(node, name):
     fc = node.getElementsByTagName(name)[0].firstChild
     return fc.wholeText if fc else ''
 
-def check_senate_xml():
+def check_senate_xml(save=False):
     table = LegislatorTable('legislators.csv')
     senate_xml_url = 'http://senate.gov/general/contact_information/senators_cfm.xml'
     phone_re = re.compile('\((\d{3})\)\s(\d{3}\-\d{4})')
@@ -238,7 +245,7 @@ def check_senate_xml():
     a = p = w = e = 0
     for member in members:
         bioguide = _get_xml_value(member, 'bioguide_id')
-        address = _get_xml_value(member, 'address').split('\n')[0]
+        address = _get_xml_value(member, 'address').split('\n')[0][:-20]
         if address:
             address = string.capwords(address)
         phone = _get_xml_value(member, 'phone')
@@ -267,7 +274,8 @@ def check_senate_xml():
         if leg['website'] != website:
             print 'Sen %s: changed website from %s to %s' % (leg['lastname'], leg['website'], website)
             table.legislators[bioguide]['website'] = website
-    table.save_to('legislators.csv')
+    if save:
+        table.save_to('legislators.csv')
 
 def check_missing_data():
     table = LegislatorTable('legislators.csv')
@@ -287,8 +295,8 @@ def check_missing_data():
         print field, ':', ','.join(polnames)
         print
 
-def get_votesmart_legislators():
-    for state in STATES:
+def get_votesmart_legislators(states):
+    for state in states:
         try:
             for leg in votesmart.officials.getByOfficeState(6, state):
                 yield leg
@@ -298,13 +306,15 @@ def get_votesmart_legislators():
         for leg in votesmart.officials.getByOfficeState(5, state):
             yield leg
 
-def check_votesmart(add=False):
+def check_votesmart(add=False, states=None):
     table = LegislatorTable('legislators.csv')
-    for leg in get_votesmart_legislators():
+    if not states:
+        states = STATES
+    for leg in get_votesmart_legislators(states):
         if not table.get_legislator(votesmart_id=leg.candidateId):
             print '%s %s (%s)' % (leg.firstName, leg.lastName, leg.candidateId)
             if add:
                 bioguide = raw_input('Bioguide ID: ')
                 if bioguide:
-                    table.add_legislator(leg, bioguide_id=bioguide)
+                    table.add_legislator_from_pvs(leg, bioguide_id=bioguide)
     table.save_to('legislators.csv')
