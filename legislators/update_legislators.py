@@ -193,7 +193,7 @@ def check_bioguide(csvfile):
                 print '--check manually--'
             id_num += 1
 
-def sanity_check(csvfile):
+def check_sanity(csvfile):
     table = LegislatorTable(csvfile)
     sens = defaultdict(list)
     reps = defaultdict(list)
@@ -235,8 +235,8 @@ def _get_xml_value(node, name):
     fc = node.getElementsByTagName(name)[0].firstChild
     return fc.wholeText if fc else ''
 
-def check_senate_xml(save=False):
-    table = LegislatorTable('legislators.csv')
+def check_senate_xml(csvfile, save=False):
+    table = LegislatorTable(csvfile)
     senate_xml_url = 'http://senate.gov/general/contact_information/senators_cfm.xml'
     phone_re = re.compile('\((\d{3})\)\s(\d{3}\-\d{4})')
     senate_xml = urllib.urlopen(senate_xml_url).read()
@@ -275,10 +275,10 @@ def check_senate_xml(save=False):
             print 'Sen %s: changed website from %s to %s' % (leg['lastname'], leg['website'], website)
             table.legislators[bioguide]['website'] = website
     if save:
-        table.save_to('legislators.csv')
+        table.save_to(csvfile)
 
-def check_missing_data():
-    table = LegislatorTable('legislators.csv')
+def check_missing_data(csvfile):
+    table = LegislatorTable(csvfile)
     ignored_fields = ['nickname', 'name_suffix', 'email', 'youtube_url', 'twitter_id', 'official_rss', 'eventful_id', 'sunlight_old_id', 'middlename', 'senate_class']
     missing = defaultdict(list)
     for leg in table.legislators.itervalues():
@@ -306,8 +306,8 @@ def get_votesmart_legislators(states):
         for leg in votesmart.officials.getByOfficeState(5, state):
             yield leg
 
-def check_votesmart(add=False, states=None):
-    table = LegislatorTable('legislators.csv')
+def check_votesmart(csvfile, add=False, states=None):
+    table = LegislatorTable(csvfile)
     if not states:
         states = STATES
     for leg in get_votesmart_legislators(states):
@@ -318,3 +318,42 @@ def check_votesmart(add=False, states=None):
                 if bioguide:
                     table.add_legislator_from_pvs(leg, bioguide_id=bioguide)
     table.save_to('legislators.csv')
+
+def main():
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option('-f', '--file', dest='filename', default='legislators.csv',
+                      help='file to read legislators from')
+    parser.add_option('--bioguide', dest='bioguide', action='store_true', default=False)
+    parser.add_option('--sanity', dest='sanity', action='store_true', default=False)
+    parser.add_option('--senatexml', dest='senatexml', action='store_true', default=False)
+    parser.add_option('--votesmart', dest='votesmart', action='store_true', default=False)
+    parser.add_option('--missing', dest='missing', action='store_true', default=False)
+    parser.add_option('--checkall', dest='check_all', action='store_true', default=False)
+    options, args = parser.parse_args()
+
+    filename = options.filename
+    if options.check_all:
+        options.bioguide = options.sanity = options.senatexml = options.votesmart = options.missing = True
+
+    def print_header(name):
+        print '===================== %s =====================' % name
+
+    if options.bioguide:
+        print_header('bioguide')
+        check_bioguide(filename)
+    if options.sanity:
+        print_header('sanity check')
+        check_sanity(filename)
+    if options.senatexml:
+        print_header('senate xml')
+        check_senate_xml(filename)
+    if options.votesmart:
+        print_header('votesmart')
+        check_votesmart(filename)
+    if options.missing:
+        print_header('missing data')
+        check_missing_data(filename)
+
+if __name__=='__main__':
+    main()
