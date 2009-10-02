@@ -298,6 +298,11 @@ def check_missing_data():
             if k not in ignored_fields and not v:
                 missing[k].append(leg['bioguide_id'])
     for field,pols in missing.iteritems():
-        print field, ':', ','.join(pols)
+        polnames = []
+        for pol in pols:
+            pobj = table.legislators[pol]
+            fname = pobj['nickname'] or pobj['firstname']
+            polnames.append(fname + ' ' + pobj['lastname'])
+        print field, ':', ','.join(polnames)
         print
 
