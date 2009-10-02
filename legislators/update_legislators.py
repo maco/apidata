@@ -294,9 +294,10 @@ def check_missing_data():
     ignored_fields = ['nickname', 'name_suffix', 'email', 'youtube_url', 'twitter_id', 'official_rss', 'eventful_id', 'sunlight_old_id', 'middlename', 'senate_class']
     missing = defaultdict(list)
     for leg in table.legislators.itervalues():
-        for k,v in leg.iteritems():
-            if k not in ignored_fields and not v:
-                missing[k].append(leg['bioguide_id'])
+        if leg['in_office'] == '1':
+            for k,v in leg.iteritems():
+                if k not in ignored_fields and not v:
+                    missing[k].append(leg['bioguide_id'])
     for field,pols in missing.iteritems():
         polnames = []
         for pol in pols:
