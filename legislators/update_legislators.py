@@ -319,6 +319,16 @@ def check_votesmart(csvfile, add=False, states=None):
                     table.add_legislator_from_pvs(leg, bioguide_id=bioguide)
     table.save_to('legislators.csv')
 
+def standardize_file(csvfile):
+    DATE_FROM = '%Y/%m/%d'
+    DATE_TO = '%m/%d/%Y'
+    from datetime import datetime
+    tbl = LegislatorTable(csvfile)
+    for l in tbl.legislators.itervalues():
+        date = datetime.strptime(l['birthdate'], DATE_FROM).strftime(DATE_TO)
+        l['birthdate'] = date
+    tbl.save_to(csvfile)
+
 def main():
     from optparse import OptionParser
     parser = OptionParser()
