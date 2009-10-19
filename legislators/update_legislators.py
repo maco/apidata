@@ -320,13 +320,16 @@ def check_votesmart(csvfile, add=False, states=None):
     table.save_to('legislators.csv')
 
 def standardize_file(csvfile):
-    DATE_FROM = '%Y/%m/%d'
+    DATE_FROM = '%m/%d/%y'
     DATE_TO = '%m/%d/%Y'
     from datetime import datetime
     tbl = LegislatorTable(csvfile)
     for l in tbl.legislators.itervalues():
-        date = datetime.strptime(l['birthdate'], DATE_FROM).strftime(DATE_TO)
-        l['birthdate'] = date
+        date = datetime.strptime(l['birthdate'], DATE_FROM)
+        if date.year > 2000:
+            date = datetime(date.year-100, date.month, date.day)
+        newdate = date.strftime(DATE_TO)
+        l['birthdate'] = newdate
     tbl.save_to(csvfile)
 
 def main():
