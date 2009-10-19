@@ -1,7 +1,7 @@
 ''' Script for detecting new legislators and getting as much data as possible about them. '''
 
 import csv
-import urllib
+import urllib2
 import re
 from collections import defaultdict
 import string
@@ -181,7 +181,7 @@ def check_bioguide(csvfile):
 
         while True:
             url = 'http://bioguide.congress.gov/scripts/biodisplay.pl?index=%s%06d' % (letter, id_num)
-            page = urllib.urlopen(url).read()
+            page = urllib2.urlopen(url).read()
             if re.search('does not exist', page):
                 break
             print '%s%06d' % (letter, id_num),
@@ -239,7 +239,7 @@ def check_senate_xml(csvfile, save=False):
     table = LegislatorTable(csvfile)
     senate_xml_url = 'http://senate.gov/general/contact_information/senators_cfm.xml'
     phone_re = re.compile('\((\d{3})\)\s(\d{3}\-\d{4})')
-    senate_xml = urllib.urlopen(senate_xml_url).read()
+    senate_xml = urllib2.urlopen(senate_xml_url).read()
     dom = minidom.parseString(senate_xml)
     members = dom.getElementsByTagName('member')
     a = p = w = e = 0
@@ -318,6 +318,22 @@ def check_votesmart(csvfile, add=False, states=None):
                 if bioguide:
                     table.add_legislator_from_pvs(leg, bioguide_id=bioguide)
     table.save_to('legislators.csv')
+
+def check_urls(csvfile):
+    table = LegislatorTable(csvfile)
+    for leg in table.legislators.values():
+        site = leg['website']
+        if site:
+            try:
+                f = urllib2.urlopen(site)
+                if f.geturl() != site:
+                    print '%s --> %s' % (site, f.geturl())
+                    leg['website'] = f.geturl()
+            except urllib2.HTTPError:
+                print '404 on %s' % site
+            except urllib2.URLError:
+                print 'error on %s' % site
+    return table
 
 def standardize_file(csvfile):
     DATE_FROM = '%m/%d/%y'
