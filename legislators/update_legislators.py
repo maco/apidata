@@ -319,20 +319,23 @@ def check_votesmart(csvfile, add=False, states=None):
                     table.add_legislator_from_pvs(leg, bioguide_id=bioguide)
     table.save_to('legislators.csv')
 
+def _check_site(leg, key):
+    site = leg[key]
+    if site:
+        try:
+            f = urllib2.urlopen(site)
+            if f.geturl() != site:
+                print '%s --> %s' % (site, f.geturl())
+                leg[key] = f.geturl()
+        except urllib2.HTTPError:
+            print '404 on %s' % site
+        except urllib2.URLError:
+            print 'error on %s' % site
+
 def check_urls(csvfile):
     table = LegislatorTable(csvfile)
     for leg in table.legislators.values():
-        site = leg['website']
-        if site:
-            try:
-                f = urllib2.urlopen(site)
-                if f.geturl() != site:
-                    print '%s --> %s' % (site, f.geturl())
-                    leg['website'] = f.geturl()
-            except urllib2.HTTPError:
-                print '404 on %s' % site
-            except urllib2.URLError:
-                print 'error on %s' % site
+        _check_site(leg, 'website')
     return table
 
 def standardize_file(csvfile):
