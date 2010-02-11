@@ -362,6 +362,7 @@ def main():
     parser.add_option('--votesmart', dest='votesmart', action='store_true', default=False)
     parser.add_option('--missing', dest='missing', action='store_true', default=False)
     parser.add_option('--checkall', dest='check_all', action='store_true', default=False)
+    parser.add_option('--reformat', dest='reformat', action='store_true', default=False)
     options, args = parser.parse_args()
 
     filename = options.filename
@@ -386,6 +387,8 @@ def main():
     if options.missing:
         print_header('missing data')
         check_missing_data(filename)
+    if options.reformat:
+        LegislatorTable(filename).save_to(filename)
 
 if __name__=='__main__':
     main()
