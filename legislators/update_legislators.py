@@ -382,7 +382,7 @@ def main():
         check_senate_xml(filename)
     if options.votesmart:
         print_header('votesmart')
-        check_votesmart(filename)
+        check_votesmart(filename, True)
     if options.missing:
         print_header('missing data')
         check_missing_data(filename)
