@@ -98,7 +98,7 @@ class LegislatorTable(object):
         bio = votesmart.candidatebio.getBio(id) 
         if bio.gender:
             person['gender'] = bio.gender[0]
-        person['fec_id'] = bio.fecId
+        person['crp_id'] = bio.crpId
 
         # in_office
         person['in_office'] = '1'
