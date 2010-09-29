@@ -103,17 +103,8 @@ class LegislatorTable(object):
 
         # in_office
         person['in_office'] = '1'
-        #curleg = self.get_legislator(state=state, district=district,
-        #                             in_office='1')
-        #if curleg:
-        #    print 'Setting in_office=False on:', curleg
-        #    curleg['in_office'] = '0'
 
         person['bioguide_id'] = bioguide_id
-        # person['crp_id'] =
-        # person['govtrack_id'] =
-        # person['twitter_id'] =
-        # person['congresspedia_url'] =
         self.legislators[bioguide_id] = person
 
 
@@ -352,6 +343,35 @@ def standardize_file(csvfile):
         l['birthdate'] = newdate
     tbl.save_to(csvfile)
 
+# title
+# firstname
+# middlename
+# lastname
+# name_suffix
+# nickname
+# party
+# state
+# district
+# in_office
+# gender
+# phone
+# fax
+# website
+# webform
+# email
+# congress_office
+# bioguide_id
+# votesmart_id
+# fec_id
+# govtrack_id
+# crp_id
+# twitter_id
+# congresspedia_url
+# youtube_url
+# official_rss
+# senate_class
+# birthdate
+
 def scrape_house(csvfile):
     table = LegislatorTable(csvfile)
     base_url = 'http://clerk.house.gov/member_info/mem_contact_info.html?statdis=%s%02d'
@@ -359,16 +379,22 @@ def scrape_house(csvfile):
         url = base_url % (leg['state'], int(leg['district']))
         data = urllib2.urlopen(url).read()
         doc = lxml.html.fromstring(data)
-        try:
-            # district, addr, city, phone, (optional note about subcommittees)
-            addr = doc.xpath('//div[@id="results"]/p/text()')[1]
-            addr = addr.strip().replace('HOB', 'House Office Building')
-            if addr != leg['congress_office']:
-                leg['congress_office'] = addr
-                print 'Updated', leg['firstname'], leg['lastname']
-        except Exception as e:
-            print 'encountered exception (%s) while processing %s %s' % (
-                e, leg['firstname'], leg['lastname'])
+
+        # district, addr, city, phone, (optional note about subcommittees)
+        pieces = doc.xpath('//div[@id="results"]/p/text()')
+        addr = pieces[1]
+        addr = addr.strip().replace('HOB', 'House Office Building')
+        if addr != leg['congress_office']:
+            leg['congress_office'] = addr
+            print 'Updated', leg['firstname'], leg['lastname'], 'address'
+
+        # phone
+        phone = pieces[3][7:]
+        phone = phone.replace('(', '').replace(') ', '-')
+        if phone != leg['phone']:
+            leg['phone'] = phone
+            print 'Updated', leg['firstname'], leg['lastname'], 'phone'
+
     table.save_to(csvfile)
 
 def main():
