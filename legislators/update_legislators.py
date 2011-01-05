@@ -90,8 +90,6 @@ class LegislatorTable(object):
                     person['website'] = webaddr.webAddress
                 elif webaddr.webAddressType == 'Webmail' and webaddr_re.match(webaddr.webAddress):
                     person['webform'] = webaddr.webAddress
-                elif webaddr.webAddressType == 'Email' and webaddr_re.match(webaddr.webAddress):
-                    person['email'] = webaddr.webAddress
         except VotesmartApiError:
             pass
 
@@ -234,7 +232,6 @@ def check_senate_xml(csvfile, save=False):
     senate_xml = urllib2.urlopen(senate_xml_url).read()
     dom = minidom.parseString(senate_xml)
     members = dom.getElementsByTagName('member')
-    a = p = w = e = 0
     for member in members:
         bioguide = _get_xml_value(member, 'bioguide_id')
         address = _get_xml_value(member, 'address').split('\n')[0][:-20]
@@ -244,9 +241,7 @@ def check_senate_xml(csvfile, save=False):
         if phone:
             phone = '-'.join(phone_re.match(phone).groups())
         webform = _get_xml_value(member, 'email')
-        email = ''
         if webform and webform.startswith('mailto'):
-            email = webform[7:]
             webform = ''
         website = _get_xml_value(member, 'website')
 
@@ -260,9 +255,6 @@ def check_senate_xml(csvfile, save=False):
         if leg['webform'] != webform:
             print 'Sen %s: changed webform from %s to %s' % (leg['lastname'], leg['webform'], webform)
             table.legislators[bioguide]['webform'] = webform
-        if leg['email'] != email:
-            print 'Sen %s: changed email from %s to %s' % (leg['lastname'], leg['email'], email)
-            table.legislators[bioguide]['email'] = email
         if leg['website'] != website:
             print 'Sen %s: changed website from %s to %s' % (leg['lastname'], leg['website'], website)
             table.legislators[bioguide]['website'] = website
@@ -271,7 +263,7 @@ def check_senate_xml(csvfile, save=False):
 
 def check_missing_data(csvfile):
     table = LegislatorTable(csvfile)
-    ignored_fields = ['nickname', 'name_suffix', 'email', 'youtube_url', 'twitter_id', 'official_rss', 'eventful_id', 'sunlight_old_id', 'middlename', 'senate_class']
+    ignored_fields = ['nickname', 'name_suffix', 'youtube_url', 'twitter_id', 'official_rss', 'eventful_id', 'sunlight_old_id', 'middlename', 'senate_class']
     missing = defaultdict(list)
     for leg in table.legislators.itervalues():
         if leg['in_office'] == '1':
@@ -358,7 +350,6 @@ def standardize_file(csvfile):
 # fax
 # website
 # webform
-# email
 # congress_office
 # bioguide_id
 # votesmart_id
