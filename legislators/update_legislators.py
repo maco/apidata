@@ -263,7 +263,7 @@ def check_senate_xml(csvfile, save=False):
 
 def check_missing_data(csvfile):
     table = LegislatorTable(csvfile)
-    ignored_fields = ['nickname', 'name_suffix', 'youtube_url', 'twitter_id', 'official_rss', 'eventful_id', 'sunlight_old_id', 'middlename', 'senate_class']
+    ignored_fields = ['nickname', 'name_suffix', 'youtube_url', 'twitter_id', 'official_rss', 'middlename', 'senate_class']
     missing = defaultdict(list)
     for leg in table.legislators.itervalues():
         if leg['in_office'] == '1':
