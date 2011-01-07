@@ -3,6 +3,7 @@
 import csv
 import urllib2
 import re
+import os.path
 from collections import defaultdict
 import string
 from xml.dom import minidom
@@ -388,6 +389,12 @@ def scrape_house(csvfile):
 
     table.save_to(csvfile)
 
+def check_photos(csvfile, photo_dir):
+    table = LegislatorTable(csvfile)
+    for leg in table.get_legislators(in_office='1'):
+        if not os.path.exists('%s/%s.jpg' % (photo_dir, leg['bioguide_id'])):
+            print leg['firstname'], leg['lastname'], leg['bioguide_id']
+
 def main():
     from optparse import OptionParser
     parser = OptionParser()
@@ -399,6 +406,7 @@ def main():
     parser.add_option('--votesmart', dest='votesmart', action='store_true', default=False)
     parser.add_option('--missing', dest='missing', action='store_true', default=False)
     parser.add_option('--checkall', dest='check_all', action='store_true', default=False)
+    parser.add_option('--photos', dest='photo_dir', default=None)
     parser.add_option('--reformat', dest='reformat', action='store_true', default=False)
     options, args = parser.parse_args()
 
@@ -424,6 +432,9 @@ def main():
     if options.missing:
         print_header('missing data')
         check_missing_data(filename)
+    if options.photo_dir:
+        print_header('checking photos')
+        check_photos(filename, options.photo_dir)
     if options.reformat:
         LegislatorTable(filename).save_to(filename)
 
