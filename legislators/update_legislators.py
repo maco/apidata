@@ -425,7 +425,7 @@ def main():
         check_sanity(filename)
     if options.senatexml:
         print_header('senate xml')
-        check_senate_xml(filename)
+        check_senate_xml(filename, True)
     if options.votesmart:
         print_header('votesmart')
         check_votesmart(filename, True)
