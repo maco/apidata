@@ -190,6 +190,10 @@ def check_sanity(csvfile):
     reps = defaultdict(list)
     dels = defaultdict(list)
 
+    id_fields = ('bioguide_id', 'votesmart_id', 'crp_id', 'fec_id',
+                 'govtrack_id')
+    unique_ids = defaultdict(set)
+
     # go through entire list and count active legislators
     for leg in table.get_legislators(in_office='1'):
         if leg['title'] == 'Sen':
@@ -198,6 +202,12 @@ def check_sanity(csvfile):
             reps[leg['state']].append(leg['district'])
         else:
             dels[leg['state']].append(leg['district']) 
+
+        for f in id_fields:
+            id = leg[f]
+            if id in unique_ids[f]:
+                print 'duplicate values for %s (%s)' % (f, id)
+            unique_ids[f].add(id)
 
     # senators
     for state, districts in sens.iteritems():
