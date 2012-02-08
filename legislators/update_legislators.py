@@ -8,8 +8,6 @@ from collections import defaultdict
 import string
 from xml.dom import minidom
 import lxml.html
-from votesmart import votesmart, VotesmartApiError
-votesmart.apikey = '496ec1875a7885ec65a4ead99579642c'
 
 STATES = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
           'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA',
@@ -51,61 +49,6 @@ class LegislatorTable(object):
                 cond = (cond and leg[attname] == value)
             if cond:
                 yield leg
-
-    def add_legislator_from_pvs(self, official, bioguide_id):
-        person = {}
-        # get basic information
-        id = person['votesmart_id'] = official.candidateId
-        person['firstname'] = official.firstName
-        person['middlename'] = official.middleName
-        person['lastname'] = official.lastName
-        person['name_suffix'] = official.suffix
-        person['nickname'] = official.nickName
-        person['title'] = official.title[0:3]
-        state = person['state'] = official.officeStateId
-        district = official.officeDistrictName
-        if district == 'Jr':
-            district = 'Junior Seat'
-        elif district == 'Sr':
-            district = 'Senior Seat'
-        person['district'] = district
-        person['party'] = official.officeParties[0]
-
-        # get information from address
-        try:
-            offices = votesmart.address.getOffice(id)
-            for office in offices:
-                if office.state == 'DC':
-                    person['congress_office'] = office.street
-                    person['phone'] = office.phone1
-                    person['fax'] = office.fax1
-        except VotesmartApiError:
-            pass
-
-        # get information from web address
-        webaddr_re = re.compile('.+(house|senate)\.gov.+')
-        try:
-            webaddrs = votesmart.address.getOfficeWebAddress(id)
-            for webaddr in webaddrs:
-                if webaddr.webAddressType == 'Website' and webaddr_re.match(webaddr.webAddress):
-                    person['website'] = webaddr.webAddress
-                elif webaddr.webAddressType == 'Webmail' and webaddr_re.match(webaddr.webAddress):
-                    person['webform'] = webaddr.webAddress
-        except VotesmartApiError:
-            pass
-
-        # get information from bio
-        bio = votesmart.candidatebio.getBio(id) 
-        if bio.gender:
-            person['gender'] = bio.gender[0]
-        person['crp_id'] = bio.crpId
-
-        # in_office
-        person['in_office'] = '1'
-
-        person['bioguide_id'] = bioguide_id
-        self.legislators[bioguide_id] = person
-
 
 def compare_to(oldfile, newfile, approved_edits=None):
     """
